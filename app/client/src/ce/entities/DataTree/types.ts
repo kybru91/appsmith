@@ -10,7 +10,7 @@ import type { MetaWidgetsReduxState } from "reducers/entityReducers/metaWidgetsR
 import type { WidgetConfigProps } from "WidgetProvider/constants";
 import type { ActionDataState } from "ee/reducers/entityReducers/actionsReducer";
 import type { WidgetProps } from "widgets/BaseWidget";
-import type { CanvasWidgetsReduxState } from "reducers/entityReducers/canvasWidgetsReducer";
+import type { CanvasWidgetsReduxState } from "ee/reducers/entityReducers/canvasWidgetsReducer";
 import type { MetaState } from "reducers/entityReducers/metaReducer";
 import type { AppDataState } from "reducers/entityReducers/appReducer";
 import type { JSCollectionDataState } from "ee/reducers/entityReducers/jsActionsReducer";
@@ -193,6 +193,7 @@ export interface AppsmithEntity extends Omit<AppDataState, "store"> {
   currentPageName: string;
   workspaceName: string;
   appName: string;
+  currentEnvironmentName: string;
 }
 
 export interface DataTreeSeed {

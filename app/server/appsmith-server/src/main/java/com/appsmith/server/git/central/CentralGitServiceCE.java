@@ -1,6 +1,5 @@
 package com.appsmith.server.git.central;
 
-import com.appsmith.external.dtos.GitBranchDTO;
 import com.appsmith.external.dtos.GitRefDTO;
 import com.appsmith.external.dtos.GitStatusDTO;
 import com.appsmith.external.dtos.MergeStatusDTO;
@@ -25,6 +24,9 @@ public interface CentralGitServiceCE {
     Mono<? extends ArtifactImportDTO> importArtifactFromGit(
             String workspaceId, GitConnectDTO gitConnectDTO, ArtifactType artifactType, GitType gitType);
 
+    Mono<? extends ArtifactImportDTO> importArtifactFromGit(
+            String workspaceId, GitConnectDTO gitConnectDTO, GitType gitType);
+
     Mono<? extends Artifact> connectArtifactToGit(
             String baseArtifactId,
             ArtifactType artifactType,
@@ -37,7 +39,7 @@ public interface CentralGitServiceCE {
 
     Mono<? extends Artifact> detachRemote(String branchedArtifactId, ArtifactType artifactType, GitType gitType);
 
-    Mono<List<GitBranchDTO>> listBranchForArtifact(
+    Mono<List<GitRefDTO>> listBranchForArtifact(
             String branchedArtifactId, ArtifactType artifactType, Boolean pruneBranches, GitType gitType);
 
     Mono<String> fetchRemoteChanges(
@@ -71,7 +73,7 @@ public interface CentralGitServiceCE {
             String referencedArtifactId, ArtifactType artifactType, GitRefDTO refDTO, GitType gitType);
 
     Mono<? extends Artifact> deleteGitReference(
-            String baseArtifactId, ArtifactType artifactType, GitRefDTO gitRefDTO, GitType gitType);
+            String baseArtifactId, ArtifactType artifactType, String refName, RefType refType, GitType gitType);
 
     Mono<List<String>> updateProtectedBranches(
             String baseArtifactId, ArtifactType artifactType, List<String> branchNames);

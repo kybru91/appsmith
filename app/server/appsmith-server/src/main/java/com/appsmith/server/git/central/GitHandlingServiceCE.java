@@ -5,6 +5,7 @@ import com.appsmith.external.dtos.GitStatusDTO;
 import com.appsmith.external.dtos.MergeStatusDTO;
 import com.appsmith.external.git.dtos.FetchRemoteDTO;
 import com.appsmith.git.dto.CommitDTO;
+import com.appsmith.server.constants.ArtifactType;
 import com.appsmith.server.domains.Artifact;
 import com.appsmith.server.domains.GitArtifactMetadata;
 import com.appsmith.server.domains.GitAuth;
@@ -15,6 +16,7 @@ import com.appsmith.server.git.dtos.ArtifactJsonTransformationDTO;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -32,6 +34,15 @@ public interface GitHandlingServiceCE {
     Mono<GitAuth> getGitAuthForUser();
 
     Boolean isGitAuthInvalid(GitAuth gitAuth);
+
+    // TODO: use only the required params
+    Mono<Path> updateImportedRepositoryDetails(
+            Artifact baseArtifact, ArtifactJsonTransformationDTO jsonTransformationDTO);
+
+    Mono<ArtifactType> obtainArtifactTypeFromGitRepository(ArtifactJsonTransformationDTO jsonTransformationDTO);
+
+    Mono<String> fetchRemoteRepository(
+            GitConnectDTO gitConnectDTO, GitAuth gitAuth, ArtifactJsonTransformationDTO jsonTransformationDTO);
 
     Mono<String> fetchRemoteRepository(
             GitConnectDTO gitConnectDTO, GitAuth gitAuth, Artifact artifact, String repoName);
@@ -65,7 +76,6 @@ public interface GitHandlingServiceCE {
 
     Mono<String> createFirstCommit(ArtifactJsonTransformationDTO jsonTransformationDTO, CommitDTO commitDTO);
 
-    // TODO: provide a proper name
     Mono<Boolean> prepareChangesToBeCommitted(
             ArtifactJsonTransformationDTO jsonTransformationDTO, ArtifactExchangeJson artifactExchangeJson);
 
@@ -88,6 +98,7 @@ public interface GitHandlingServiceCE {
     Mono<GitStatusDTO> getStatus(ArtifactJsonTransformationDTO jsonTransformationDTO);
 
     Mono<String> createGitReference(
+            ArtifactJsonTransformationDTO baseRefJsonTransformationDTO,
             ArtifactJsonTransformationDTO artifactJsonTransformationDTO,
             GitArtifactMetadata baseGitData,
             GitRefDTO gitRefDTO);

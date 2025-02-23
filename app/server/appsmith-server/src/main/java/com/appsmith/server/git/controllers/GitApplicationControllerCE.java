@@ -1,19 +1,21 @@
 package com.appsmith.server.git.controllers;
 
-import com.appsmith.external.dtos.GitBranchDTO;
 import com.appsmith.external.dtos.GitRefDTO;
 import com.appsmith.external.dtos.GitStatusDTO;
 import com.appsmith.external.dtos.MergeStatusDTO;
 import com.appsmith.external.git.constants.ce.RefType;
 import com.appsmith.external.views.Views;
 import com.appsmith.git.dto.CommitDTO;
+import com.appsmith.server.artifacts.base.ArtifactService;
 import com.appsmith.server.constants.ArtifactType;
 import com.appsmith.server.constants.FieldName;
 import com.appsmith.server.constants.Url;
 import com.appsmith.server.domains.Artifact;
 import com.appsmith.server.domains.GitArtifactMetadata;
+import com.appsmith.server.domains.GitAuth;
 import com.appsmith.server.dtos.AutoCommitResponseDTO;
 import com.appsmith.server.dtos.BranchProtectionRequestDTO;
+import com.appsmith.server.dtos.GitAuthDTO;
 import com.appsmith.server.dtos.GitConnectDTO;
 import com.appsmith.server.dtos.GitMergeDTO;
 import com.appsmith.server.dtos.GitPullDTO;
@@ -21,7 +23,6 @@ import com.appsmith.server.dtos.ResponseDTO;
 import com.appsmith.server.git.autocommit.AutoCommitService;
 import com.appsmith.server.git.central.CentralGitService;
 import com.appsmith.server.git.central.GitType;
-import com.appsmith.server.git.utils.GitProfileUtils;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,8 +50,8 @@ import java.util.List;
 public class GitApplicationControllerCE {
 
     protected final CentralGitService centralGitService;
-    protected final GitProfileUtils gitProfileUtils;
     protected final AutoCommitService autoCommitService;
+    protected final ArtifactService artifactService;
 
     protected static final ArtifactType ARTIFACT_TYPE = ArtifactType.APPLICATION;
     protected static final GitType GIT_TYPE = GitType.FILE_SYSTEM;
@@ -60,7 +61,7 @@ public class GitApplicationControllerCE {
     public Mono<ResponseDTO<GitArtifactMetadata>> getGitMetadata(@PathVariable String baseApplicationId) {
         return centralGitService
                 .getGitArtifactMetadata(baseApplicationId, ARTIFACT_TYPE)
-                .map(metadata -> new ResponseDTO<>(HttpStatus.OK.value(), metadata, null));
+                .map(metadata -> new ResponseDTO<>(HttpStatus.OK, metadata));
     }
 
     @JsonView(Views.Public.class)
@@ -71,7 +72,7 @@ public class GitApplicationControllerCE {
             @RequestHeader("Origin") String originHeader) {
         return centralGitService
                 .connectArtifactToGit(applicationId, ARTIFACT_TYPE, gitConnectDTO, originHeader, GIT_TYPE)
-                .map(application -> new ResponseDTO<>(HttpStatus.OK.value(), application, null));
+                .map(application -> new ResponseDTO<>(HttpStatus.OK, application));
     }
 
     @JsonView(Views.Public.class)
@@ -82,7 +83,7 @@ public class GitApplicationControllerCE {
         log.info("Going to commit branchedApplicationId {}", branchedApplicationId);
         return centralGitService
                 .commitArtifact(commitDTO, branchedApplicationId, ARTIFACT_TYPE, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.CREATED.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.CREATED, result));
     }
 
     @JsonView(Views.Public.class)
@@ -97,8 +98,8 @@ public class GitApplicationControllerCE {
                 referencedApplicationId,
                 srcBranch);
         return centralGitService
-                .createReference(referencedApplicationId, ArtifactType.APPLICATION, gitRefDTO, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.CREATED.value(), result, null));
+                .createReference(referencedApplicationId, ARTIFACT_TYPE, gitRefDTO, GIT_TYPE)
+                .map(result -> new ResponseDTO<>(HttpStatus.CREATED, result));
     }
 
     @JsonView(Views.Public.class)
@@ -107,7 +108,7 @@ public class GitApplicationControllerCE {
             @PathVariable String referencedApplicationId, @RequestBody GitRefDTO gitRefDTO) {
         return centralGitService
                 .checkoutReference(referencedApplicationId, ARTIFACT_TYPE, gitRefDTO, true, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
@@ -116,7 +117,7 @@ public class GitApplicationControllerCE {
         log.info("Going to remove the remoteUrl for application {}", branchedApplicationId);
         return centralGitService
                 .detachRemote(branchedApplicationId, ARTIFACT_TYPE, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
@@ -125,7 +126,7 @@ public class GitApplicationControllerCE {
         log.info("Going to pull the latest for branchedApplicationId {}", branchedApplicationId);
         return centralGitService
                 .pullArtifact(branchedApplicationId, ARTIFACT_TYPE, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
@@ -136,7 +137,7 @@ public class GitApplicationControllerCE {
         log.info("Going to get status for branchedApplicationId {}", branchedApplicationId);
         return centralGitService
                 .getStatus(branchedApplicationId, ARTIFACT_TYPE, compareRemote, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
@@ -147,7 +148,7 @@ public class GitApplicationControllerCE {
         log.info("Going to compare with remote for default referencedApplicationId {}", referencedApplicationId);
         return centralGitService
                 .fetchRemoteChanges(referencedApplicationId, ARTIFACT_TYPE, true, GIT_TYPE, refType)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
@@ -161,7 +162,7 @@ public class GitApplicationControllerCE {
                 branchedApplicationId);
         return centralGitService
                 .mergeBranch(branchedApplicationId, ARTIFACT_TYPE, gitMergeDTO, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
@@ -175,17 +176,19 @@ public class GitApplicationControllerCE {
                 branchedApplicationId);
         return centralGitService
                 .isBranchMergable(branchedApplicationId, ARTIFACT_TYPE, gitMergeDTO, GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
     }
 
     @JsonView(Views.Public.class)
     @DeleteMapping("/{baseArtifactId}/ref")
     public Mono<ResponseDTO<? extends Artifact>> deleteBranch(
-            @PathVariable String baseArtifactId, @RequestBody GitRefDTO gitRefDTO) {
-        log.info("Going to delete ref {} for baseApplicationId {}", gitRefDTO.getRefName(), baseArtifactId);
+            @PathVariable String baseArtifactId,
+            @RequestParam String refName,
+            @RequestParam(required = false, defaultValue = "branch") RefType refType) {
+        log.info("Going to delete ref {} for baseApplicationId {}", refName, baseArtifactId);
         return centralGitService
-                .deleteGitReference(baseArtifactId, ARTIFACT_TYPE, gitRefDTO, GIT_TYPE)
-                .map(application -> new ResponseDTO<>(HttpStatus.OK.value(), application, null));
+                .deleteGitReference(baseArtifactId, ARTIFACT_TYPE, refName, refType, GIT_TYPE)
+                .map(application -> new ResponseDTO<>(HttpStatus.OK, application));
     }
 
     @JsonView(Views.Public.class)
@@ -194,25 +197,25 @@ public class GitApplicationControllerCE {
         log.info("Going to discard changes for branchedApplicationId {}", branchedApplicationId);
         return centralGitService
                 .discardChanges(branchedApplicationId, ARTIFACT_TYPE, GIT_TYPE)
-                .map(result -> new ResponseDTO<>((HttpStatus.OK.value()), result, null));
+                .map(result -> new ResponseDTO<>((HttpStatus.OK), result));
     }
 
     @JsonView(Views.Public.class)
-    @PostMapping("/{baseArtifactId}/branch/protected")
+    @PostMapping("/{baseArtifactId}/protected-branches")
     public Mono<ResponseDTO<List<String>>> updateProtectedBranches(
             @PathVariable String baseArtifactId,
             @RequestBody @Valid BranchProtectionRequestDTO branchProtectionRequestDTO) {
         return centralGitService
                 .updateProtectedBranches(baseArtifactId, ARTIFACT_TYPE, branchProtectionRequestDTO.getBranchNames())
-                .map(data -> new ResponseDTO<>(HttpStatus.OK.value(), data, null));
+                .map(data -> new ResponseDTO<>(HttpStatus.OK, data));
     }
 
     @JsonView(Views.Public.class)
-    @GetMapping("/{baseArtifactId}/branch/protected")
+    @GetMapping("/{baseArtifactId}/protected-branches")
     public Mono<ResponseDTO<List<String>>> getProtectedBranches(@PathVariable String baseArtifactId) {
         return centralGitService
                 .getProtectedBranches(baseArtifactId, ARTIFACT_TYPE)
-                .map(list -> new ResponseDTO<>(HttpStatus.OK.value(), list, null));
+                .map(list -> new ResponseDTO<>(HttpStatus.OK, list));
     }
 
     @JsonView(Views.Public.class)
@@ -220,7 +223,7 @@ public class GitApplicationControllerCE {
     public Mono<ResponseDTO<AutoCommitResponseDTO>> autoCommitApplication(@PathVariable String branchedApplicationId) {
         return autoCommitService
                 .autoCommitApplication(branchedApplicationId)
-                .map(data -> new ResponseDTO<>(HttpStatus.OK.value(), data, null));
+                .map(data -> new ResponseDTO<>(HttpStatus.OK, data));
     }
 
     @JsonView(Views.Public.class)
@@ -230,7 +233,7 @@ public class GitApplicationControllerCE {
             @RequestHeader(name = FieldName.BRANCH_NAME, required = false) String branchName) {
         return centralGitService
                 .getAutoCommitProgress(baseApplicationId, ARTIFACT_TYPE, branchName)
-                .map(data -> new ResponseDTO<>(HttpStatus.OK.value(), data, null));
+                .map(data -> new ResponseDTO<>(HttpStatus.OK, data));
     }
 
     @JsonView(Views.Public.class)
@@ -238,18 +241,36 @@ public class GitApplicationControllerCE {
     public Mono<ResponseDTO<Boolean>> toggleAutoCommitEnabled(@PathVariable String baseArtifactId) {
         return centralGitService
                 .toggleAutoCommitEnabled(baseArtifactId, ARTIFACT_TYPE)
-                .map(data -> new ResponseDTO<>(HttpStatus.OK.value(), data, null));
+                .map(data -> new ResponseDTO<>(HttpStatus.OK, data));
     }
 
     @JsonView(Views.Public.class)
-    @GetMapping("/{branchedApplicationId}/branches")
-    public Mono<ResponseDTO<List<GitBranchDTO>>> branch(
+    @GetMapping("/{branchedApplicationId}/refs")
+    public Mono<ResponseDTO<List<GitRefDTO>>> getReferences(
             @PathVariable String branchedApplicationId,
+            @RequestParam(required = false, defaultValue = "branch") RefType refType,
             @RequestParam(required = false, defaultValue = "false") Boolean pruneBranches) {
         log.debug("Going to get branch list for application {}", branchedApplicationId);
         return centralGitService
                 .listBranchForArtifact(
                         branchedApplicationId, ARTIFACT_TYPE, BooleanUtils.isTrue(pruneBranches), GIT_TYPE)
-                .map(result -> new ResponseDTO<>(HttpStatus.OK.value(), result, null));
+                .map(result -> new ResponseDTO<>(HttpStatus.OK, result));
+    }
+
+    @JsonView(Views.Public.class)
+    @GetMapping("/{branchedApplicationId}/ssh-keypair")
+    public Mono<ResponseDTO<GitAuthDTO>> getSSHKey(@PathVariable String branchedApplicationId) {
+        return artifactService
+                .getSshKey(ARTIFACT_TYPE, branchedApplicationId)
+                .map(created -> new ResponseDTO<>(HttpStatus.CREATED, created));
+    }
+
+    @JsonView(Views.Public.class)
+    @PostMapping("/{branchedApplicationId}/ssh-keypair")
+    public Mono<ResponseDTO<GitAuth>> generateSSHKeyPair(
+            @PathVariable String branchedApplicationId, @RequestParam(required = false) String keyType) {
+        return artifactService
+                .createOrUpdateSshKeyPair(ARTIFACT_TYPE, branchedApplicationId, keyType)
+                .map(created -> new ResponseDTO<>(HttpStatus.CREATED, created));
     }
 }

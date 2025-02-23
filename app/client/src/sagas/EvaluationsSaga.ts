@@ -118,7 +118,7 @@ import {
   getCurrentApplicationId,
   getCurrentPageId,
 } from "selectors/editorSelectors";
-import { getInstanceId } from "ee/selectors/tenantSelectors";
+import { getInstanceId } from "ee/selectors/organizationSelectors";
 import type {
   AffectedJSObjects,
   EvaluationReduxAction,
@@ -341,9 +341,7 @@ export function* evaluateAndExecuteDynamicTrigger(
   dynamicTrigger: string,
   eventType: EventType,
   triggerMeta: TriggerMeta,
-  // TODO: Fix this the next time the file is edited
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  callbackData?: Array<any>,
+  callbackData?: Array<unknown>,
   globalContext?: Record<string, unknown>,
 ) {
   const rootSpan = startRootSpan("DataTreeFactory.create");
@@ -889,6 +887,7 @@ export function* evaluationLoopWithDebounce(
     }
   }
 }
+
 // TODO: Fix this the next time the file is edited
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function* evaluateActionSelectorFieldSaga(action: any) {
